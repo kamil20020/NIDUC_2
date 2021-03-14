@@ -62,20 +62,46 @@ class Coder:
 class Noise:
 
     @staticmethod
-    def noiseSignal(signal):
-        print("Noise")
+    def noiseSignal(signal, changeChance):
 
+        preparedSignal = []
+
+        for i in signal:
+
+            packet = []
+
+            for j in i:
+
+                rand = random.randint(0,100)
+
+                if(rand >= 100 - changeChance):
+
+                    if(j == 1):
+                        j = 0
+                    else:
+                        j = 1
+
+                packet.append(j)
+
+            preparedSignal.append(packet)
+
+        return preparedSignal
 
 class Application:
 
     def run(self):
-        self.signal = Generator.generateSignal(10)
+        self.signal = Generator.generateSignal(20)
         print(self.signal)
+
         self.signal = Coder.divideSignal(self.signal, 3)
         print(self.signal)
+
         self.signal = Coder.codeSignal(self.signal)
         print(self.signal)
-        
+
+        self.signal = Noise.noiseSignal(self.signal, 10)
+        print(self.signal)
+
 
 app = Application()
 app.run()
