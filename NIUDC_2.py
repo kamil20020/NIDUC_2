@@ -75,12 +75,19 @@ class Noise:
 
         return packet
 
+class Decoder:
+
+    @staticmethod
+    def decodeParityBit(packet):
+
+        if(makeParityBit(packet) == 1):
+            return False
+
+        return True
 
 class Application:
 
-    def stopAndWait(self, signal):
-
-        parityBitMatch = False
+    def stopAndWaitParityBit(self, signal):
 
         howMuchRepeats = []
 
@@ -89,22 +96,20 @@ class Application:
         for i in range(len(signal)):
             howMuchRepeats.append(0)
 
-        x = int(input("Wprowadz 0 dla kodowania z dodaniem bitu parzystosci lub 1 dla kodowania przy pomocy algorytmu CRC: "))
-
         for i in range(len(signal)): 
 
-            if(x == 0):
+            beforeNoisePacket = []
 
-                signal[i] = Coder.codePacketWithParity(self.signal[i]) 
-                print("\nZakodowany (bit parzystosci) pakiet numer ", i, ": ", signal[i], "\n")
+            beforeNoisePacket = signal[i].copy()
 
-                previousPacket = []
+            signal[i] = Coder.codePacketWithParity(signal[i]) 
+            print("\nZakodowany (bitem parzystosci) pakiet numer ", i, ": ", signal[i], "\n")
 
-                previousPacket = signal.copy()
+            parityBitMatch = False
 
             while parityBitMatch == False:
 
-                signal[i] = Noise.noisePacket(self.signal[i], 10)
+                signal[i] = Noise.noisePacket(signal[i], 10)
 
                 if(howMuchRepeats[i] == 0):
 
@@ -113,20 +118,18 @@ class Application:
                 else:
                     print("Powtórnie przesłany pakiet numer ", i, ": ", signal[i], "\n")
 
-                if(makeParityBit(signal[i]) == 1):
+                if(Decoder.decodeParityBit(signal[i]) == False):
 
                     howMuchRepeats[i] += 1
 
                 else:
 
-                    if(previousPacket != signal[i]):
+                    signal[i].pop(len(signal[i])-1)
+
+                    if(beforeNoisePacket != signal[i]):
                         notDetectedErrors += 1
 
                     parityBitMatch = True
-
-            parityBitMatch = False
-
-            signal[i].pop(len(signal[i])-1)
 
             print("-----------\n")
 
@@ -145,20 +148,35 @@ class Application:
         print("Przesłano ", packetsWithMoreThanFourRepeats, " pakietów, które wymagały więcej niż cztery powtórzenia")
         print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
 
-        return signal
+    def stopAndWaitCrc(self, signal):
+
+        return 1
+
+    def stopAndWait(self, signal):
+
+        x = int(input("Wprowadz 0 dla kodowania z dodaniem bitu parzystosci lub 1 dla kodowania przy pomocy algorytmu CRC: "))
+        print("\n-----------")
+
+        if(x == 0):
+            self.stopAndWaitParityBit(signal)
 
     def run(self):
 
-        self.signal = Generator.generateSignal(100)
-        print("Sygnał: \n", self.signal, "\n")
+        numberOfBits = int(input("Wprowadź wielkość sygnału w postaci liczby bitów: "))
 
-        self.signal = Coder.divideSignal(self.signal, 8)
-        print("Podzielony sygnał: \n", self.signal, "\n")
+        signal = Generator.generateSignal(numberOfBits)
+        print("Sygnał: \n",signal, "\n")
 
-        x = int(input("Wprowadź 0 aby wykonać symulację stopAndWhite: "))
+        packetSize = int(input("Wprowadź wielkość jednego pakietu: "))
 
-        if(x == 0):
-            self.stopAndWait(self.signal)
+        signal = Coder.divideSignal(signal, packetSize)
+        print("Podzielony sygnał: \n", signal, "\n")
+
+        simulationType = int(input("Wprowadź 0 aby wykonać symulację stop and wait: "))
+
+        if(simulationType == 0):
+
+           self.stopAndWait(signal)
 
 
 app = Application()
