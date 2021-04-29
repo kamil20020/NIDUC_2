@@ -14,6 +14,46 @@ def makeParityBit(packet):
     else:
         return 1
 
+def returnCrcRest(first, second):
+
+    i = 0
+    doEnd = False
+
+    while doEnd == False:
+
+        firstNumberOfLeftBits = len(first)-i
+
+        if(firstNumberOfLeftBits < len(second)):
+            break
+
+        if(first[i] == 1):
+
+            subI = 0
+            inI = i
+            while subI < len(second):
+
+                first[inI] = first[inI]^second[subI]
+                inI += 1
+                subI += 1
+
+                if(inI >= len(first)):
+                    doEnd = True
+                    break
+
+        else:
+            i += 1
+
+            if(i >= len(first)):
+                doEnd = True
+                break
+
+    rest = []
+    
+    for i in range(len(first)-(len(second)-1), len(first)):
+        rest.append(first[i])
+
+    return rest
+
 class Generator:
 
     @staticmethod
@@ -55,6 +95,23 @@ class Coder:
 
         packet.append(makeParityBit(packet))
 
+        return packet
+
+    @staticmethod
+    def encodeCrc(packet, n):
+
+        x = [1,0,1,1]
+
+        testPacket = packet.copy()
+
+        for i in range(n):
+            testPacket.append(0)
+  
+        rest = returnCrcRest(testPacket, x)
+
+        for i in range(len(rest)):
+            packet.append(rest[i])
+  
         return packet
 
 class Noise:
@@ -179,7 +236,15 @@ class Application:
            self.stopAndWait(signal)
 
 
-app = Application()
-app.run()
+#app = Application()
+#app.run()
+
+packet = Generator.generateSignal(10)
+print("Generated packet:\n", packet)
+
+packet = Coder.encodeCrc(packet, 3)
+print("\nPacket encoded with crc:\n", packet)
+
+
 
     
