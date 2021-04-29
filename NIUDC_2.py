@@ -142,7 +142,91 @@ class Decoder:
 
         return True
 
+    @staticmethod
+    def decodeCrc(packet, n):
+
+        x = [1,0,1,1]
+
+        testPacket = packet.copy()
+  
+        rest = returnCrcRest(testPacket, x)
+
+        checkingRest = []
+        
+        for i in range(n):
+            checkingRest.append(0)
+
+        if(checkingRest == rest):
+            return True
+  
+        return False
+
+
 class Application:
+
+    def stopAndWaitCrc(self, signal, n):
+
+        howMuchRepeats = []
+
+        notDetectedErrors = 0
+
+        for i in range(len(signal)):
+            howMuchRepeats.append(0)
+
+        for i in range(len(signal)): 
+
+            beforeNoisePacket = []
+
+            beforeNoisePacket = signal[i].copy()
+
+            signal[i] = Coder.encodeCrc(signal[i], n)
+            print("\nZakodowany (kodem nadmiarowym) pakiet numer ", i, ": ", signal[i], "\n")
+
+            crcMatch = False
+
+            while crcMatch == False:
+
+                signal[i] = Noise.noisePacket(signal[i], 10)
+
+                if(howMuchRepeats[i] == 0):
+
+                    print("Przesłany pakiet numer ", i, ": ", signal[i], "\n")
+
+                else:
+                    print("Powtórnie przesłany pakiet numer ", i, ": ", signal[i], "\n")
+
+                if(Decoder.decodeCrc(signal[i], n) == False):
+
+                    howMuchRepeats[i] += 1
+
+                else:
+
+                    for i in range(n):
+                        signal[i].pop(len(signal[i])-1)
+
+                    if(beforeNoisePacket != signal[i]):
+                        notDetectedErrors += 1
+
+                    crcMatch = True
+
+            print("-----------\n")
+
+        packetsWithMoreThanFourRepeats = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 4):
+                packetsWithMoreThanFourRepeats += 1
+
+        print("Przesłano ", howMuchRepeats.count(0), " pakietów bezbłędnie")
+        print("Przesłano ", howMuchRepeats.count(1), " pakietów, które wymagały jednego powtórzenia")
+        print("Przesłano ", howMuchRepeats.count(2), " pakietów, które wymagały dwóch powtórzeń")
+        print("Przesłano ", howMuchRepeats.count(3), " pakietów, które wymagały trzech powtórzeń")
+        print("Przesłano ", howMuchRepeats.count(4), " pakietów, które wymagały czterech powtórzeń")
+        print("Przesłano ", packetsWithMoreThanFourRepeats, " pakietów, które wymagały więcej niż cztery powtórzenia")
+        print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
+
+        return signal
 
     def stopAndWaitParityBit(self, signal):
 
@@ -205,17 +289,19 @@ class Application:
         print("Przesłano ", packetsWithMoreThanFourRepeats, " pakietów, które wymagały więcej niż cztery powtórzenia")
         print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
 
-    def stopAndWaitCrc(self, signal):
-
-        return 1
+        return signal
 
     def stopAndWait(self, signal):
 
-        x = int(input("Wprowadz 0 dla kodowania z dodaniem bitu parzystosci lub 1 dla kodowania przy pomocy algorytmu CRC: "))
+        print("Menu: \n 0 - kodowanie bitem parzystosci \n 1 - kodowanie kodem nadmiarowym \n")
+
+        x = int(input("Wprowadz odpowiedni znak: "))
         print("\n-----------")
 
         if(x == 0):
             self.stopAndWaitParityBit(signal)
+        elif(x == 1):
+            self.stopAndWaitCrc(signal, 3)
 
     def run(self):
 
@@ -229,21 +315,19 @@ class Application:
         signal = Coder.divideSignal(signal, packetSize)
         print("Podzielony sygnał: \n", signal, "\n")
 
-        simulationType = int(input("Wprowadź 0 aby wykonać symulację stop and wait: "))
+        print("\nMenu: \n 0 - sumulacja stop and wait\n")
+        simulationType = int(input("Wprowadz odpowiedni znak: "))
 
         if(simulationType == 0):
+            self.stopAndWait(signal)
+        
+        if(simulationType != -1):
+            print("\n")
+            self.run()
 
-           self.stopAndWait(signal)
 
-
-#app = Application()
-#app.run()
-
-packet = Generator.generateSignal(10)
-print("Generated packet:\n", packet)
-
-packet = Coder.encodeCrc(packet, 3)
-print("\nPacket encoded with crc:\n", packet)
+app = Application()
+app.run()
 
 
 
