@@ -291,18 +291,6 @@ class Application:
 
         return signal
 
-    def stopAndWait(self, signal):
-
-        print("Menu: \n 0 - kodowanie bitem parzystosci \n 1 - kodowanie kodem nadmiarowym \n")
-
-        x = int(input("Wprowadz odpowiedni znak: "))
-        print("\n-----------")
-
-        if(x == 0):
-            self.stopAndWaitParityBit(signal)
-        elif(x == 1):
-            self.stopAndWaitCrc(signal, 3)
-
     def run(self):
 
         numberOfBits = int(input("Wprowadź wielkość sygnału w postaci liczby bitów: "))
@@ -315,11 +303,25 @@ class Application:
         signal = Coder.divideSignal(signal, packetSize)
         print("Podzielony sygnał: \n", signal, "\n")
 
+        print("Menu: \n 0 - kodowanie bitem parzystosci \n 1 - kodowanie kodem nadmiarowym \n")
+
+        codingType = int(input("Wprowadz odpowiedni znak: "))
+        print("\n-----------\n")
+
         print("\nMenu: \n 0 - sumulacja stop and wait\n")
         simulationType = int(input("Wprowadz odpowiedni znak: "))
 
         if(simulationType == 0):
-            self.stopAndWait(signal)
+            
+            if(codingType == 0):
+                self.stopAndWaitParityBit(signal)
+
+            elif(codingType == 1):
+                self.stopAndWaitCrc(signal, 3)
+
+        elif(simulationType == 1):
+            print("Not implemented")
+
         
         if(simulationType != -1):
             print("\n")
