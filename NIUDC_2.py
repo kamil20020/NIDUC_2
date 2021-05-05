@@ -164,7 +164,9 @@ class Decoder:
 
 class Application:
 
-    def stopAndWaitCrc(self, signal, n):
+    def stopAndWaitCrc(self, signal, crcType):
+
+        receivedSignal = []
 
         howMuchRepeats = []
 
@@ -173,14 +175,18 @@ class Application:
         for i in range(len(signal)):
             howMuchRepeats.append(0)
 
+        beforeNoisePackets = []
+
         for i in range(len(signal)): 
 
-            beforeNoisePacket = []
-
-            beforeNoisePacket = signal[i].copy()
-
-            signal[i] = Coder.encodeCrc(signal[i], n)
+            signal[i] = Coder.encodeCrc(signal[i], crcType)
             print("\nZakodowany (kodem nadmiarowym) pakiet numer ", i, ": ", signal[i], "\n")
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        print("-----------\n")
+
+        for i in range(len(signal)):
 
             crcMatch = False
 
@@ -195,17 +201,23 @@ class Application:
                 else:
                     print("Powtórnie przesłany pakiet numer ", i, ": ", signal[i], "\n")
 
-                if(Decoder.decodeCrc(signal[i], n) == False):
+                if(Decoder.decodeCrc(signal[i], crcType) == False):
 
                     howMuchRepeats[i] += 1
 
+                    print("Błędnie odebrany pakiet numer ", i, ": ", signal[i], "\n")
+
                 else:
 
-                    for i in range(n):
+                    if(beforeNoisePackets[i] != signal[i]):
+                        notDetectedErrors += 1
+
+                    for j in range(crcType):
                         signal[i].pop(len(signal[i])-1)
 
-                    if(beforeNoisePacket != signal[i]):
-                        notDetectedErrors += 1
+                    receivedSignal.append(signal[i])
+
+                    print("Pomyślnie odebrany pakiet numer ", i, ": ", signal[i], "\n")
 
                     crcMatch = True
 
@@ -226,9 +238,11 @@ class Application:
         print("Przesłano ", packetsWithMoreThanFourRepeats, " pakietów, które wymagały więcej niż cztery powtórzenia")
         print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
 
-        return signal
+        return receivedSignal
 
     def stopAndWaitParityBit(self, signal):
+
+        receivedSignal = []
 
         howMuchRepeats = []
 
@@ -237,14 +251,16 @@ class Application:
         for i in range(len(signal)):
             howMuchRepeats.append(0)
 
+        beforeNoisePackets = []
+
         for i in range(len(signal)): 
-
-            beforeNoisePacket = []
-
-            beforeNoisePacket = signal[i].copy()
 
             signal[i] = Coder.codePacketWithParity(signal[i]) 
             print("\nZakodowany (bitem parzystosci) pakiet numer ", i, ": ", signal[i], "\n")
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        for i in range(len(signal)): 
 
             parityBitMatch = False
 
@@ -263,12 +279,18 @@ class Application:
 
                     howMuchRepeats[i] += 1
 
+                    print("Błędnie odebrany pakiet numer ", i, ": ", signal[i], "\n")
+
                 else:
+
+                    if(beforeNoisePackets[i] != signal[i]):
+                        notDetectedErrors += 1
 
                     signal[i].pop(len(signal[i])-1)
 
-                    if(beforeNoisePacket != signal[i]):
-                        notDetectedErrors += 1
+                    receivedSignal.append(signal[i])
+
+                    print("Pomyślnie odebrany pakiet numer ", i, ": ", signal[i], "\n")
 
                     parityBitMatch = True
 
@@ -291,9 +313,205 @@ class Application:
 
         return signal
 
+    def goBackNParityBit(self, signal, frameSize):
+
+        receivedSignal = []
+
+        howMuchRepeats = []
+
+        notDetectedErrors = 0
+
+        for i in range(len(signal)):
+            howMuchRepeats.append(0)
+
+        beforeNoisePackets = []
+
+        for i in range(len(signal)):
+
+            signal[i] = Coder.codePacketWithParity(signal[i]) 
+            print("\nZakodowany (bitem parzystosci) pakiet numer ", i, ": ", signal[i], "\n")
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        print("-----------\n")
+
+        index = 0
+
+        while index < len(signal): 
+
+            parityBitMatch = False
+            end = False
+
+            while parityBitMatch == False and end == False:
+
+                jIndex = index
+
+                whichSubFrame = 0
+
+                while jIndex < index + len(beforeNoisePackets) and whichSubFrame < frameSize:
+
+                    signal[jIndex] = Noise.noisePacket(signal[jIndex], 10)
+
+                    if(howMuchRepeats[jIndex] == 0):
+
+                        print("Przesłany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                    else:
+                        print("Powtórnie przesłany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                    if(Decoder.decodeParityBit(signal[jIndex]) == False):
+
+                        howMuchRepeats[jIndex] += 1
+
+                        print("Błędnie odebrany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                        end = True
+                        break
+
+                    else:
+
+                        if(beforeNoisePackets[jIndex] != signal[jIndex]):
+                            notDetectedErrors += 1
+
+                        signal[jIndex].pop(len(signal[jIndex])-1)
+
+                        receivedSignal.append(signal[jIndex])
+
+                        print("Pomyślnie odebrany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                        index += 1
+                        jIndex += 1
+
+                        whichSubFrame += 1
+
+                        if(index == len(signal)):
+                           end = True
+                           break
+
+                        parityBitMatch = True
+
+            print("-----------\n")
+
+        packetsWithMoreThanFourRepeats = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 4):
+                packetsWithMoreThanFourRepeats += 1
+
+        print("Przesłano ", howMuchRepeats.count(0), " pakietów bezbłędnie")
+        print("Przesłano ", howMuchRepeats.count(1), " pakietów, które wymagały jednego powtórzenia")
+        print("Przesłano ", howMuchRepeats.count(2), " pakietów, które wymagały dwóch powtórzeń")
+        print("Przesłano ", howMuchRepeats.count(3), " pakietów, które wymagały trzech powtórzeń")
+        print("Przesłano ", howMuchRepeats.count(4), " pakietów, które wymagały czterech powtórzeń")
+        print("Przesłano ", packetsWithMoreThanFourRepeats, " pakietów, które wymagały więcej niż cztery powtórzenia")
+        print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
+
+        return receivedSignal
+
+    def goBackNCrc(self, signal, frameSize, crcType):
+
+        receivedSignal = []
+
+        howMuchRepeats = []
+
+        notDetectedErrors = 0
+
+        for i in range(len(signal)):
+            howMuchRepeats.append(0)
+
+        beforeNoisePackets = []
+
+        for i in range(len(signal)):
+
+            signal[i] = Coder.encodeCrc(signal[i], crcType)
+            print("\nZakodowany (kodem nadmiarowym) pakiet numer ", i, ": ", signal[i], "\n")
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        print("-----------\n")
+
+        index = 0
+
+        while index < len(signal): 
+
+            crcMatch = False
+            end = False
+
+            while crcMatch == False and end == False:
+
+                jIndex = index
+
+                whichSubFrame = 0
+
+                while jIndex < index + len(beforeNoisePackets) and whichSubFrame < frameSize:
+
+                    signal[jIndex] = Noise.noisePacket(signal[jIndex], 10)
+
+                    if(howMuchRepeats[jIndex] == 0):
+
+                        print("Przesłany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                    else:
+                        print("Powtórnie przesłany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                    if(Decoder.decodeCrc(signal[jIndex], crcType) == False):
+
+                        howMuchRepeats[jIndex] += 1
+
+                        print("Błędnie odebrany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                        end = True
+                        break
+
+                    else:
+
+                        if(beforeNoisePackets[jIndex] != signal[jIndex]):
+                            notDetectedErrors += 1
+
+                        for i in range(crcType):
+                            signal[jIndex].pop(len(signal[jIndex])-1)
+
+                        receivedSignal.append(signal[jIndex])
+
+                        print("Pomyślnie odebrany pakiet numer ", jIndex, ": ", signal[jIndex], "\n")
+
+                        index += 1
+                        jIndex += 1
+
+                        whichSubFrame += 1
+
+                        if(index == len(signal)):
+                           end = True
+                           break
+
+                        crcMatch = True
+
+            print("-----------\n")
+
+        packetsWithMoreThanFourRepeats = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 4):
+                packetsWithMoreThanFourRepeats += 1
+
+        print("Przesłano ", howMuchRepeats.count(0), " pakietów bezbłędnie")
+        print("Przesłano ", howMuchRepeats.count(1), " pakietów, które wymagały jednego powtórzenia")
+        print("Przesłano ", howMuchRepeats.count(2), " pakietów, które wymagały dwóch powtórzeń")
+        print("Przesłano ", howMuchRepeats.count(3), " pakietów, które wymagały trzech powtórzeń")
+        print("Przesłano ", howMuchRepeats.count(4), " pakietów, które wymagały czterech powtórzeń")
+        print("Przesłano ", packetsWithMoreThanFourRepeats, " pakietów, które wymagały więcej niż cztery powtórzenia")
+        print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
+
+        return receivedSignal
+
     def run(self):
 
-        numberOfBits = int(input("Wprowadź wielkość sygnału w postaci liczby bitów: "))
+        numberOfBits = int(input("Wprowadź wielkość sygnału w postaci liczby bitów (-1 kończy program): "))
+        if(numberOfBits == -1):
+            return 0
+            
 
         signal = Generator.generateSignal(numberOfBits)
         print("Sygnał: \n",signal, "\n")
@@ -308,7 +526,10 @@ class Application:
         codingType = int(input("Wprowadz odpowiedni znak: "))
         print("\n-----------\n")
 
-        print("\nMenu: \n 0 - sumulacja stop and wait\n")
+        #if(codingType == 1):
+        #    crcType = int(input("Wprowadz typ crc (rozmiar wielomianu generujacego - 1): "))
+
+        print("\nMenu: \n 0 - sumulacja stop and wait\n 1 - symulacja go back n \n")
         simulationType = int(input("Wprowadz odpowiedni znak: "))
 
         if(simulationType == 0):
@@ -320,7 +541,12 @@ class Application:
                 self.stopAndWaitCrc(signal, 3)
 
         elif(simulationType == 1):
-            print("Not implemented")
+            
+            if(codingType == 0):
+                self.goBackNParityBit(signal, 3)
+
+            elif(codingType == 1):
+                self.goBackNCrc(signal, 3, 3)
 
         
         if(simulationType != -1):
