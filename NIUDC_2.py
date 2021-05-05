@@ -192,7 +192,7 @@ class Application:
 
             while crcMatch == False:
 
-                signal[i] = Noise.noisePacket(signal[i], 10)
+                signal[i] = Noise.noisePacket(list(beforeNoisePackets[i]), 10)
 
                 if(howMuchRepeats[i] == 0):
 
@@ -266,7 +266,7 @@ class Application:
 
             while parityBitMatch == False:
 
-                signal[i] = Noise.noisePacket(signal[i], 10)
+                signal[i] = Noise.noisePacket(list(beforeNoisePackets[i]), 10)
 
                 if(howMuchRepeats[i] == 0):
 
@@ -350,7 +350,7 @@ class Application:
 
                 while jIndex < index + len(beforeNoisePackets) and whichSubFrame < frameSize:
 
-                    signal[jIndex] = Noise.noisePacket(signal[jIndex], 10)
+                    signal[jIndex] = Noise.noisePacket(list(beforeNoisePackets[jIndex]), 10)
 
                     if(howMuchRepeats[jIndex] == 0):
 
@@ -446,7 +446,7 @@ class Application:
 
                 while jIndex < index + len(beforeNoisePackets) and whichSubFrame < frameSize:
 
-                    signal[jIndex] = Noise.noisePacket(signal[jIndex], 10)
+                    signal[jIndex] = Noise.noisePacket(list(beforeNoisePackets[jIndex]), 10)
 
                     if(howMuchRepeats[jIndex] == 0):
 
