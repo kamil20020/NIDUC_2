@@ -1,5 +1,6 @@
 import random
 import math
+import csv
 
 def makeParityBit(packet):
 
@@ -240,6 +241,125 @@ class Application:
 
         return receivedSignal
 
+    def stopAndWaitCrcForTests(self, signal, crcType):
+
+        receivedSignal = []
+
+        howMuchRepeats = []
+
+        notDetectedErrors = 0
+
+        for i in range(len(signal)):
+            howMuchRepeats.append(0)
+
+        beforeNoisePackets = []
+
+        for i in range(len(signal)): 
+
+            signal[i] = Coder.encodeCrc(signal[i], crcType)
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        for i in range(len(signal)):
+
+            crcMatch = False
+
+            while crcMatch == False:
+
+                signal[i] = Noise.noisePacket(list(beforeNoisePackets[i]), 10)
+
+                if(Decoder.decodeCrc(signal[i], crcType) == False):
+
+                    howMuchRepeats[i] += 1
+
+                else:
+
+                    if(beforeNoisePackets[i] != signal[i]):
+                        notDetectedErrors += 1
+
+                    for j in range(crcType):
+                        signal[i].pop(len(signal[i])-1)
+
+                    receivedSignal.append(signal[i])
+
+                    crcMatch = True
+
+        packetsWithMoreThanFourRepeats = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 4):
+                packetsWithMoreThanFourRepeats += 1
+
+        sumOfPacketsRepeated = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 0):
+                sumOfPacketsRepeated += 1
+           
+        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
+        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
+
+    def stopAndWaitParityBitForTests(self, signal):
+
+        receivedSignal = []
+
+        howMuchRepeats = []
+
+        notDetectedErrors = 0
+
+        for i in range(len(signal)):
+            howMuchRepeats.append(0)
+
+        beforeNoisePackets = []
+
+        for i in range(len(signal)): 
+
+            signal[i] = Coder.codePacketWithParity(signal[i]) 
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        for i in range(len(signal)): 
+
+            parityBitMatch = False
+
+            while parityBitMatch == False:
+
+                signal[i] = Noise.noisePacket(list(beforeNoisePackets[i]), 10)
+
+                if(Decoder.decodeParityBit(signal[i]) == False):
+
+                    howMuchRepeats[i] += 1
+
+                else:
+
+                    if(beforeNoisePackets[i] != signal[i]):
+                        notDetectedErrors += 1
+
+                    signal[i].pop(len(signal[i])-1)
+
+                    receivedSignal.append(signal[i])
+
+                    parityBitMatch = True
+
+        packetsWithMoreThanFourRepeats = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 4):
+                packetsWithMoreThanFourRepeats += 1
+
+        sumOfPacketsRepeated = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 0):
+                sumOfPacketsRepeated += 1
+           
+        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
+        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
+
     def stopAndWaitParityBit(self, signal):
 
         receivedSignal = []
@@ -312,6 +432,86 @@ class Application:
         print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
 
         return signal
+
+    def goBackNParityBitForTests(self, signal, frameSize):
+
+        receivedSignal = []
+
+        howMuchRepeats = []
+
+        notDetectedErrors = 0
+
+        for i in range(len(signal)):
+            howMuchRepeats.append(0)
+
+        beforeNoisePackets = []
+
+        for i in range(len(signal)):
+
+            signal[i] = Coder.codePacketWithParity(signal[i]) 
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        index = 0
+
+        while index < len(signal): 
+
+            parityBitMatch = False
+            end = False
+
+            while parityBitMatch == False and end == False:
+
+                jIndex = index
+
+                whichSubFrame = 0
+
+                while jIndex < index + len(beforeNoisePackets) and whichSubFrame < frameSize:
+
+                    signal[jIndex] = Noise.noisePacket(list(beforeNoisePackets[jIndex]), 10)
+
+                    if(Decoder.decodeParityBit(signal[jIndex]) == False):
+
+                        howMuchRepeats[jIndex] += 1
+
+                        end = True
+                        break
+
+                    else:
+
+                        if(beforeNoisePackets[jIndex] != signal[jIndex]):
+                            notDetectedErrors += 1
+
+                        signal[jIndex].pop(len(signal[jIndex])-1)
+
+                        receivedSignal.append(signal[jIndex])
+
+                        index += 1
+                        jIndex += 1
+
+                        whichSubFrame += 1
+
+                        if(index == len(signal)):
+                           end = True
+                           break
+
+                        parityBitMatch = True
+
+        packetsWithMoreThanFourRepeats = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 4):
+                packetsWithMoreThanFourRepeats += 1
+
+        sumOfPacketsRepeated = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 0):
+                sumOfPacketsRepeated += 1
+           
+        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
+        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
 
     def goBackNParityBit(self, signal, frameSize):
 
@@ -408,6 +608,90 @@ class Application:
         print("Wystąpiło ", notDetectedErrors, " błędów niewykrytych")
 
         return receivedSignal
+
+    def goBackNCrcForTests(self, signal, frameSize, crcType):
+
+        receivedSignal = []
+
+        howMuchRepeats = []
+
+        notDetectedErrors = 0
+
+        for i in range(len(signal)):
+            howMuchRepeats.append(0)
+
+        beforeNoisePackets = []
+
+        for i in range(len(signal)):
+
+            signal[i] = Coder.encodeCrc(signal[i], crcType)
+
+            beforeNoisePackets.append(signal[i].copy())
+
+        print("-----------\n")
+
+        index = 0
+
+        while index < len(signal): 
+
+            crcMatch = False
+            end = False
+
+            while crcMatch == False and end == False:
+
+                jIndex = index
+
+                whichSubFrame = 0
+
+                while jIndex < index + len(beforeNoisePackets) and whichSubFrame < frameSize:
+
+                    signal[jIndex] = Noise.noisePacket(list(beforeNoisePackets[jIndex]), 10)
+
+                    if(Decoder.decodeCrc(signal[jIndex], crcType) == False):
+
+                        howMuchRepeats[jIndex] += 1
+
+                        end = True
+                        break
+
+                    else:
+
+                        if(beforeNoisePackets[jIndex] != signal[jIndex]):
+                            notDetectedErrors += 1
+
+                        for i in range(crcType):
+                            signal[jIndex].pop(len(signal[jIndex])-1)
+
+                        receivedSignal.append(signal[jIndex])
+
+                        index += 1
+                        jIndex += 1
+
+                        whichSubFrame += 1
+
+                        if(index == len(signal)):
+                           end = True
+                           break
+
+                        crcMatch = True
+
+        packetsWithMoreThanFourRepeats = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 4):
+                packetsWithMoreThanFourRepeats += 1
+
+        sumOfPacketsRepeated = 0
+
+        for i in howMuchRepeats:
+
+            if(i > 0):
+                sumOfPacketsRepeated += 1
+           
+        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
+        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
+
 
     def goBackNCrc(self, signal, frameSize, crcType):
 
@@ -511,8 +795,7 @@ class Application:
         numberOfBits = int(input("Wprowadź wielkość sygnału w postaci liczby bitów (-1 kończy program): "))
         if(numberOfBits == -1):
             return 0
-            
-
+           
         signal = Generator.generateSignal(numberOfBits)
         print("Sygnał: \n",signal, "\n")
 
@@ -553,9 +836,25 @@ class Application:
             print("\n")
             self.run()
 
+    def tests(self):
+
+        file = open("tests.csv", "w", newline='')
+
+        for i in range(1000):
+
+            signal = Generator.generateSignal(200)
+
+            signal = Coder.divideSignal(signal, 10)
+
+            csvWriter = csv.writer(file)
+            csvWriter.writerow(self.stopAndWaitParityBitForTests(signal))
+
+        file.close()
+
 
 app = Application()
-app.run()
+#app.run()
+app.tests()
 
 
 
