@@ -284,22 +284,15 @@ class Application:
 
                     crcMatch = True
 
-        packetsWithMoreThanFourRepeats = 0
+        packetsWithMoreThanTwoRepeats = 0
 
         for i in howMuchRepeats:
 
-            if(i > 4):
-                packetsWithMoreThanFourRepeats += 1
-
-        sumOfPacketsRepeated = 0
-
-        for i in howMuchRepeats:
-
-            if(i > 0):
-                sumOfPacketsRepeated += 1
+            if(i > 2):
+                packetsWithMoreThanTwoRepeats += 1
            
-        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
-        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
+        #pakiety wyslane bez bledow, wymagajace 1 powtorzenie, wymagajace 2, wiecej niz 2 powtorzenia, z niewykrytymi bledami
+        return howMuchRepeats.count(0), howMuchRepeats.count(1), howMuchRepeats.count(2), packetsWithMoreThanTwoRepeats, notDetectedErrors
 
     def stopAndWaitParityBitForTests(self, signal):
 
@@ -343,22 +336,15 @@ class Application:
 
                     parityBitMatch = True
 
-        packetsWithMoreThanFourRepeats = 0
+        packetsWithMoreThanTwoRepeats = 0
 
         for i in howMuchRepeats:
 
-            if(i > 4):
-                packetsWithMoreThanFourRepeats += 1
-
-        sumOfPacketsRepeated = 0
-
-        for i in howMuchRepeats:
-
-            if(i > 0):
-                sumOfPacketsRepeated += 1
+            if(i > 2):
+                packetsWithMoreThanTwoRepeats += 1
            
-        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
-        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
+        #pakiety wyslane bez bledow, wymagajace 1 powtorzenie, wymagajace 2, wiecej niz 2 powtorzenia, z niewykrytymi bledami
+        return howMuchRepeats.count(0), howMuchRepeats.count(1), howMuchRepeats.count(2), packetsWithMoreThanTwoRepeats, notDetectedErrors
 
     def stopAndWaitParityBit(self, signal):
 
@@ -496,22 +482,15 @@ class Application:
 
                         parityBitMatch = True
 
-        packetsWithMoreThanFourRepeats = 0
+        packetsWithMoreThanTwoRepeats = 0
 
         for i in howMuchRepeats:
 
-            if(i > 4):
-                packetsWithMoreThanFourRepeats += 1
-
-        sumOfPacketsRepeated = 0
-
-        for i in howMuchRepeats:
-
-            if(i > 0):
-                sumOfPacketsRepeated += 1
+            if(i > 2):
+                packetsWithMoreThanTwoRepeats += 1
            
-        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
-        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
+        #pakiety wyslane bez bledow, wymagajace 1 powtorzenie, wymagajace 2, wiecej niz 2 powtorzenia, z niewykrytymi bledami
+        return howMuchRepeats.count(0), howMuchRepeats.count(1), howMuchRepeats.count(2), packetsWithMoreThanTwoRepeats, notDetectedErrors
 
     def goBackNParityBit(self, signal, frameSize):
 
@@ -675,22 +654,15 @@ class Application:
 
                         crcMatch = True
 
-        packetsWithMoreThanFourRepeats = 0
+        packetsWithMoreThanTwoRepeats = 0
 
         for i in howMuchRepeats:
 
-            if(i > 4):
-                packetsWithMoreThanFourRepeats += 1
-
-        sumOfPacketsRepeated = 0
-
-        for i in howMuchRepeats:
-
-            if(i > 0):
-                sumOfPacketsRepeated += 1
+            if(i > 2):
+                packetsWithMoreThanTwoRepeats += 1
            
-        #pakiety wyslane bez bledow, wymagajace powtorzen, z niewykrytymi bledami
-        return howMuchRepeats.count(0), sumOfPacketsRepeated, notDetectedErrors
+        #pakiety wyslane bez bledow, wymagajace 1 powtorzenie, wymagajace 2, wiecej niz 2 powtorzenia, z niewykrytymi bledami
+        return howMuchRepeats.count(0), howMuchRepeats.count(1), howMuchRepeats.count(2), packetsWithMoreThanTwoRepeats, notDetectedErrors
 
 
     def goBackNCrc(self, signal, frameSize, crcType):
