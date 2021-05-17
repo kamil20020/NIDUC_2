@@ -819,6 +819,8 @@ class Application:
             signal = Coder.divideSignal(signal, 10)
 
             csvWriter = csv.writer(file)
+
+            #pakiety wyslane bez bledow, wymagajace 1 powtorzenie, wymagajace 2, wiecej niz 2 powtorzenia, z niewykrytymi bledami
             csvWriter.writerow(self.stopAndWaitParityBitForTests(signal))
 
         file.close()
